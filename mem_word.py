@@ -103,7 +103,8 @@ class MemWord():
 
     def __str__(self):
         if self.dervative_of is not None:
-            result = 'DEFINITION EMPTY: "{}" is the derivative of "{}"\n'.format(self.word, self.dervative_of.word)
+            result = Fore.RED + TerminalVis.BOLD + 'DEFINITION EMPTY: ' + Style.RESET_ALL 
+            result += '"{}" is the derivative of "{}"\n'.format(self.word, self.dervative_of.word)
             return result + self.dervative_of.__str__()
 
         result = ""
@@ -125,3 +126,5 @@ class MemWord():
             voc.append(MemWord.OnlineConstruct(w))
         return voc
 
+if __name__ == "__main__":
+    print("dict")

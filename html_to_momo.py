@@ -14,13 +14,22 @@ def ExtractHtmlTableFirstColumn(text_file):
     words = [m[1] for m in match_list]
     return words
 
+def NoPhrase(items):
+    words = []
+    for i in items:
+        if ' ' in i:
+            continue
+        if len(i) == 0:
+            continue
+        words.append(i)
+    return words
+
 def ExtractWordsFromHtmlVocabulary(html_filename):
     html_file = open(html_filename, 'r')
     html_str = html_file.read()
     vocabulary_table = ExtractVocabularyTable(html_str)
-    words = ExtractHtmlTableFirstColumn(vocabulary_table)
-    return words
-
+    items = ExtractHtmlTableFirstColumn(vocabulary_table)
+    return NoPhrase(items)
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
@@ -33,6 +42,8 @@ if __name__ == "__main__":
     # vocabulary_table = ExtractVocabularyTable(html_str)
     # words = ExtractHtmlTableFirstColumn(vocabulary_table)
     words = ExtractWordsFromHtmlVocabulary(html_filename)
+    
+
     print("totally {} words".format(len(words)))
     for w in words:
         print(w)

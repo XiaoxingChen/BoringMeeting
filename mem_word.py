@@ -1,19 +1,18 @@
 import sys
 from colorama import Fore, Back, Style
+from queue import PriorityQueue
 
-def LexicoWordOrigin(w):
-    from lxml import html
-    import requests
+# def LexicoWordOrigin(w):
+#     from lxml import html
+#     import requests
 
-    page = requests.get('https://www.lexico.com/en/definition/' + w)
-    tree = html.fromstring(page.content)
-    origin = tree.xpath('//div[@class="senseInnerWrapper"]/p')
-    if len(origin) == 0:
-        return ''
-    return origin[0].text_content()
+#     page = requests.get('https://www.lexico.com/en/definition/' + w)
+#     tree = html.fromstring(page.content)
+#     origin = tree.xpath('//div[@class="senseInnerWrapper"]/p')
+#     if len(origin) == 0:
+#         return ''
+#     return origin[0].text_content()
 
-def GoogleTransMeaning(translator, w):
-    result = translator.translate(w, dest='zh-cn')
 
 class TerminalVis():
     BOLD = '\033[1m'
@@ -34,13 +33,13 @@ class TerminalVis():
 
 class WordDefBlock():
     def __init__(self, definition, example, synonyms):
-        self.definition = definition
-        self.example = example
-        self.synonyms = synonyms
+        self.definition = str(definition)
+        self.example = str(example)
+        self.synonyms = str(synonyms)
 
 class POSBlock():
     def __init__(self, pos, word_defs):
-        self.pos = pos
+        self.pos = str(pos)
         self.word_defs = word_defs
 
     def __str__(self):
@@ -97,9 +96,12 @@ class MemWord():
         self.mem_level = mem_level
         self.pos_blocks = pos_blocks
         self.definition_cn = ''
-        self.origin = origin
+        self.origin = str(origin)
         self.dervative_of = dervative_of
-        self.vis_word = Fore.LIGHTGREEN_EX + TerminalVis.BOLD + word + Style.RESET_ALL
+    
+    @property
+    def vis_word(cls):
+        return Fore.LIGHTGREEN_EX + TerminalVis.BOLD + cls.word + Style.RESET_ALL
 
     def __str__(self):
         if self.dervative_of is not None:
@@ -114,17 +116,60 @@ class MemWord():
         result += self.origin + '\n'
         return result
 
+    def __lt__(self, other):
+        return self.mem_level > other.mem_level
+
+    def Vague(self):
+        self.mem_level += 0.05
+
     @classmethod
     def OnlineConstruct(cls, word):
         pos_blocks, origin, derivative_of = LexicoWordOrigin(word)
         return cls(word, 3.,pos_blocks, origin, derivative_of)
 
-    @staticmethod
-    def Vocabulary(words):
-        voc = []
-        for w in words:
-            voc.append(MemWord.OnlineConstruct(w))
-        return voc
+class MemVocabulary():
+    def __init__(self, mem_words=[]):
+        self.words_que = PriorityQueue()
+        for w in mem_words:
+            self.words_que.put(w)
+        self.head_word = None
+    
+    def HeadWord(self):
+        if self.head_word is None:
+            self.head_word = self.words_que.get() 
+        return self.head_word
+
+    def Update(self, mem_level_top):
+        if self.head_word is None:
+            return 
+        for w in self.words_que.queue:
+            w.Vague()
+        self.head_word.mem_level = mem_level_top
+        self.words_que.put(self.head_word)
+        self.head_word = None
+
+    def Push(self, mem_words):
+        for w in mem_words:
+            self.words_que.put(w)
+
+    def __getitem__(self, i):
+        for w in self.words_que.queue:
+            if w.word == i:
+                return w
+        raise KeyError("No word: {} in vocabulary".format(i))
+
+    
+
 
 if __name__ == "__main__":
-    print("dict")
+    import yaml
+    wdb = WordDefBlock("a", "b", "c")
+    print(vars(wdb))
+
+    pbs = []
+    pbs.append(POSBlock("haha", [wdb]))
+    pbs.append(POSBlock("ddd", [wdb]))
+    serialized = yaml.dump(pbs)
+    print(serialized)
+    pb2 = yaml.load(serialized)
+    print(pb2)

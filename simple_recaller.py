@@ -1,5 +1,6 @@
 import sys
 from html_to_momo import ExtractWordsFromHtmlVocabulary
+import os
 #from googletrans import Translator
 
 
@@ -12,6 +13,19 @@ def UpdateMemWords(mem_words):
     mem_words.sort(key=MemLevel , reverse=True)
 
 if __name__ == "__main__":
+    from vocabulary_trainer import VocabularyTrainer
+    from mem_word import TerminalVis
+    if len(sys.argv) < 2:
+        print("eg.: python {} vocabulary.html".format(sys.argv[0]))
+        quit()
+    html_filename = sys.argv[1]
+    words = ExtractWordsFromHtmlVocabulary(html_filename)
+    trainer = VocabularyTrainer(words, os.path.dirname(html_filename))
+
+    trainer.Run()
+
+
+if __name__ == "__main2__":
     from mem_vocabulary import ConcurrentInitVocabulary
     from mem_word import TerminalVis
     if len(sys.argv) < 2:

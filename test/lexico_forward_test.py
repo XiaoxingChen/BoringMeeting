@@ -32,3 +32,6 @@ derive_of = tree.xpath('//section[@class="gramb"]/div[@class="empty_sense"]/p[@c
 print(derive_of[0].text_content())
 
 
+
+
+#%%

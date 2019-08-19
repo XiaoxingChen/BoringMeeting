@@ -69,10 +69,11 @@ def InitMemWordsFromLocal(words, glossary_filename):
 def PushToLocalGlossary(mem_words, glossary_filename):
     import yaml
     existed_glossary = mem_words
-    with open (glossary_filename, 'r') as g:
-        local_glossary = yaml.load(g.read())
-        if local_glossary is not None:
-            existed_glossary += local_glossary
+    if os.path.isfile(glossary_filename):
+        with open (glossary_filename, 'r') as g:
+            local_glossary = yaml.load(g.read())
+            if local_glossary is not None:
+                existed_glossary += local_glossary
     with open (glossary_filename, 'w') as g:
         g.write(yaml.dump(existed_glossary))
 
@@ -85,7 +86,7 @@ class VocabularyTrainer(object):
         mem_words += online_mem_words
         PushToLocalGlossary(online_mem_words, self.voc_path.glossary)
         self.vocab.Push(mem_words)
-    
+
     def Run(self):
         while True:
             input((self.vocab.HeadWord().vis_word).center(100))

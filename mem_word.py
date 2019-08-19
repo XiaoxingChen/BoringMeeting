@@ -62,15 +62,15 @@ def GetFirst(w):
 def LexicoWordOrigin(w):
     from lxml import html
     import requests
-
     page = requests.get('https://www.lexico.com/en/definition/' + w)
+    # page = requests.get('http://127.0.0.1:5500/test/data/hexicon_hello.html')
     tree = html.fromstring(page.content)
     origin = GetFirst(tree.xpath('//div[@class="senseInnerWrapper"]/p'))
     origin = origin.text_content() if origin != '' else ''
     pos_block_root = tree.xpath('//section[@class="gramb"]')
     pos_blocks = []
     for pos_block in pos_block_root:
-        pos = pos_block.xpath('h3[@class="ps pos"]/span[@class="pos"]/text()')[0]
+        pos = GetFirst(pos_block.xpath('h3[@class="ps pos"]/span[@class="pos"]/text()'))
         meaning_block = pos_block.xpath('ul[@class="semb"]/li/div[@class="trg"]')
         word_def_blocks = []
         for m in meaning_block:
@@ -82,7 +82,7 @@ def LexicoWordOrigin(w):
             word_def_blocks.append(WordDefBlock(meaning, example, synonyms))
         pos_blocks.append(POSBlock(pos, word_def_blocks))
 
-    derivative_word = GetFirst(tree.xpath('//div[@class="empty_sense"]/p[@class="derivative_of"]/a/text()'))
+    derivative_word = GetFirst(tree.xpath('//section[@class="gramb"]/div[@class="empty_sense"]/p[@class="derivative_of"]/a/text()'))
     derivative_of = MemWord.OnlineConstruct(derivative_word) if derivative_word != '' else None
     return pos_blocks, origin, derivative_of
 
@@ -98,14 +98,14 @@ class MemWord():
         self.definition_cn = ''
         self.origin = str(origin)
         self.dervative_of = dervative_of
-    
+
     @property
     def vis_word(cls):
         return Fore.LIGHTGREEN_EX + TerminalVis.BOLD + cls.word + Style.RESET_ALL
 
     def __str__(self):
         if self.dervative_of is not None:
-            result = Fore.RED + TerminalVis.BOLD + 'DEFINITION EMPTY: ' + Style.RESET_ALL 
+            result = Fore.RED + TerminalVis.BOLD + 'DEFINITION EMPTY: ' + Style.RESET_ALL
             result += '"{}" is the derivative of "{}"\n'.format(self.word, self.dervative_of.word)
             return result + self.dervative_of.__str__()
 
@@ -133,15 +133,15 @@ class MemVocabulary():
         for w in mem_words:
             self.words_que.put(w)
         self.head_word = None
-    
+
     def HeadWord(self):
         if self.head_word is None:
-            self.head_word = self.words_que.get() 
+            self.head_word = self.words_que.get()
         return self.head_word
 
     def Update(self, mem_level_top):
         if self.head_word is None:
-            return 
+            return
         for w in self.words_que.queue:
             w.Vague()
         self.head_word.mem_level = mem_level_top
@@ -158,7 +158,7 @@ class MemVocabulary():
                 return w
         raise KeyError("No word: {} in vocabulary".format(i))
 
-    
+
 
 
 if __name__ == "__main__":

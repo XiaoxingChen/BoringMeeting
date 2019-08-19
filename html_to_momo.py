@@ -27,7 +27,10 @@ def NoPhrase(items):
 def ExtractWordsFromHtmlVocabulary(html_filename):
     html_file = open(html_filename, 'r')
     html_str = html_file.read()
-    vocabulary_table = ExtractVocabularyTable(html_str)
+    try:
+        vocabulary_table = ExtractVocabularyTable(html_str)
+    except ValueError:
+        raise ValueError("no vocabulary segment found in {}".format(html_filename))
     items = ExtractHtmlTableFirstColumn(vocabulary_table)
     return NoPhrase(items)
 
@@ -42,7 +45,7 @@ if __name__ == "__main__":
     # vocabulary_table = ExtractVocabularyTable(html_str)
     # words = ExtractHtmlTableFirstColumn(vocabulary_table)
     words = ExtractWordsFromHtmlVocabulary(html_filename)
-    
+
 
     print("totally {} words".format(len(words)))
     for w in words:

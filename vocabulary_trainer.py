@@ -14,12 +14,14 @@ import os
 
 def ProcessFunc(w, q, total_num):
     mem_w = MemWord.OnlineConstruct(w)
-    # print('.', end='')
+    # mem_w = "test"
     q.put(mem_w)
     print("load {}/{}".format(q.qsize(), total_num), end='\r')
 
 # def InitVocabularyOnlineConcurrent(words):
 def ConcurrentInitMemWords(words):
+    import time
+    print("Construct Vocabulary !")
     q = mp.Queue()
     ps = []
     for w in words:
@@ -27,11 +29,18 @@ def ConcurrentInitMemWords(words):
         ps.append(p)
         p.start()
 
+    mem_words = []
+
+    while len(mem_words) < len(words):
+        if q.qsize() > 0:
+            mem_words.append(q.get())
+        else:
+            time.sleep(0.1)
+
     for p in ps:
         p.join()
-    mem_words = []
-    while not q.empty():
-        mem_words.append(q.get())
+
+    print("Vocabulary construction done!")
     return mem_words
 
 def InitMemWordsFromLocal(words, glossary_filename):
@@ -83,6 +92,7 @@ class VocabularyTrainer(object):
         self.vocab = MemVocabulary()
         mem_words, uninitialized_words = InitMemWordsFromLocal(words, self.voc_path.glossary)
         online_mem_words = ConcurrentInitMemWords(uninitialized_words)
+        print("words num: {}, {} from local, {} from online".format(len(words), len(mem_words), len(uninitialized_words)))
         mem_words += online_mem_words
         PushToLocalGlossary(online_mem_words, self.voc_path.glossary)
         self.vocab.Push(mem_words)

@@ -1,6 +1,7 @@
 import sys
 from html_to_momo import ExtractWordsFromHtmlVocabulary
 import os
+import glob
 #from googletrans import Translator
 
 
@@ -18,12 +19,24 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("eg.: python {} vocabulary.html".format(sys.argv[0]))
         quit()
-    html_filename = sys.argv[1]
-    words = ExtractWordsFromHtmlVocabulary(html_filename)
-    trainer = VocabularyTrainer(words, os.path.dirname(html_filename))
+
+    input_path = sys.argv[1]
+    trainer = None
+    if os.path.isfile(input_path):
+        html_filename = input_path
+        words = ExtractWordsFromHtmlVocabulary(html_filename)
+        trainer = VocabularyTrainer(words, os.path.dirname(html_filename))
+    elif os.path.isdir(input_path):
+        work_folder = input_path
+        html_files = glob.glob(work_folder + os.sep + "section_**.html")
+        words = []
+        for html_filename in html_files:
+            words += ExtractWordsFromHtmlVocabulary(html_filename)
+        trainer = VocabularyTrainer(words, work_folder)
+    else:
+        raise ValueError("invalid input param")
 
     trainer.Run()
-
 
 if __name__ == "__main2__":
     from mem_vocabulary import ConcurrentInitVocabulary

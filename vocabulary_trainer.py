@@ -12,20 +12,22 @@ import os
 # buyers = tree.xpath('//div[@class="senseInnerWrapper"]/p')
 # print(buyers[0].text_content())
 
-def ProcessFunc(w, q, total_num):
+def ProcessFunc(w, q, total_num, counter):
     mem_w = MemWord.OnlineConstruct(w)
     # mem_w = "test"
     q.put(mem_w)
-    print("load {}/{}".format(q.qsize(), total_num), end='\r')
+    counter.value += 1
+    print("load {}/{}".format(counter.value, total_num), end='\r')
 
 # def InitVocabularyOnlineConcurrent(words):
 def ConcurrentInitMemWords(words):
     import time
     print("Construct Vocabulary !")
     q = mp.Queue()
+    counter = mp.Manager().Value('i', 0)
     ps = []
     for w in words:
-        p = mp.Process(target=ProcessFunc, args=(w,q, len(words)))
+        p = mp.Process(target=ProcessFunc, args=(w,q, len(words), counter))
         ps.append(p)
         p.start()
 

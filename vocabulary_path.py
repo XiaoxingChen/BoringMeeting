@@ -4,7 +4,7 @@ class VocabularyPath():
     
     @property
     def glossary(self):
-        return self.root + '/glossary.yaml'
+        return self.root + '/glossary.tmp'
     
     @property
     def cache_folder(self):

@@ -13,7 +13,23 @@ import requests
 if __name__ == "__main__":
     from lxml import html
     import requests
-    doc = requests.get('https://lex-audio.useremarkable.com/mp3/capriciousness_gb_1.mp3')
+
+    page = requests.get('https://www.lexico.com/en/definition/revelation')
+#%%
+    tree = html.fromstring(page.content)
+    pron_root = tree.xpath('//section[@class="pronSection etym"]/div[@class="pron"]')[0]
+
+#%%
+    # print(pron_root.xpath('span[@class=phoneticspelling]'))
+    phonetic_spelling = pron_root.xpath('span[@class="phoneticspelling"]/text()')
+    print(phonetic_spelling)
+
+
+#%%
+    audio_link = pron_root.xpath('a[@class="speaker"]/audio/@src')
+    print(audio_link[0])
+
+    doc = requests.get(audio_link[0])
     with open("word.mp3", 'wb') as f:
         f.write(doc.content)
 

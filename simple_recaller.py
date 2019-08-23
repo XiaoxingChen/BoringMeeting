@@ -14,29 +14,29 @@ def UpdateMemWords(mem_words):
     mem_words.sort(key=MemLevel , reverse=True)
 
 if __name__ == "__main__":
-    from vocabulary_trainer import VocabularyTrainer
+    from vocabulary_cui import VocabularyCUI
     from mem_word import TerminalVis
     if len(sys.argv) < 2:
         print("eg.: python {} vocabulary.html".format(sys.argv[0]))
         quit()
 
     input_path = sys.argv[1]
-    trainer = None
+    cui = None
     if os.path.isfile(input_path):
         html_filename = input_path
         words = ExtractWordsFromHtmlVocabulary(html_filename)
-        trainer = VocabularyTrainer(words, os.path.dirname(html_filename))
+        cui = VocabularyCUI(words, os.path.dirname(html_filename))
     elif os.path.isdir(input_path):
         work_folder = input_path
         html_files = glob.glob(work_folder + os.sep + "section_**.html")
         words = []
         for html_filename in html_files:
             words += ExtractWordsFromHtmlVocabulary(html_filename)
-        trainer = VocabularyTrainer(words, work_folder)
+        cui = VocabularyCUI(words, work_folder)
     else:
         raise ValueError("invalid input param")
 
-    trainer.Run()
+    cui.Run()
 
 if __name__ == "__main2__":
     from mem_vocabulary import ConcurrentInitVocabulary

@@ -88,7 +88,14 @@ def PushToLocalGlossary(mem_words, glossary_filename):
     with open (glossary_filename, 'w') as g:
         g.write(yaml.dump(existed_glossary))
 
-class VocabularyTrainer(object):
+def
+
+class VocabularyIncrementalInitializer(object):
+    def __init__(self, path, words):
+        self.path = path
+        self.words = words
+
+class VocabularyCUI(object):
     def __init__(self, words, root_folder):
         self.voc_path = VocabularyPath(root_folder)
         self.vocab = MemVocabulary()

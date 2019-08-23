@@ -16,7 +16,7 @@ class VocabularyPath():
     def audio_cache_folder(self):
         return self.cache_folder + os.sep + 'audio'
 
-    def word_audio(self, word)
+    def word_audio(self, word):
         return self.audio_cache_folder + os.sep + word + '.mp3'
 
     @classmethod

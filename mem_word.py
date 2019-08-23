@@ -13,6 +13,8 @@ from queue import PriorityQueue
 #         return ''
 #     return origin[0].text_content()
 
+def GetFirst(w):
+    return w[0] if len(w) > 0 else ''
 
 class TerminalVis():
     BOLD = '\033[1m'
@@ -37,6 +39,14 @@ class WordDefBlock():
         self.example = str(example)
         self.synonyms = str(synonyms)
 
+    # @classmethod
+    # def FromLxmlNode(cls, meaning_block):
+    #     meaning = GetFirst(meaning_block.xpath('p/span[@class="ind"]/text()'))
+    #     example = GetFirst(meaning_block.xpath('div[@class="exg"]/div[@class="ex"]/em/text()'))
+    #     synonyms = GetFirst(meaning_block.xpath('div[@class="synonyms"]/div[@class="exg"]/div'))
+    #     synonyms = synonyms.text_content() if synonyms != '' else ''
+    #     return cls(meaning, example,synonyms)
+
 class POSBlock():
     def __init__(self, pos, word_defs):
         self.pos = str(pos)
@@ -56,14 +66,11 @@ class POSBlock():
 
         return output
 
-def GetFirst(w):
-    return w[0] if len(w) > 0 else ''
 
 def LexicoWordOrigin(w):
     from lxml import html
     import requests
     page = requests.get('https://www.lexico.com/en/definition/' + w)
-    # page = requests.get('http://127.0.0.1:5500/test/data/hexicon_hello.html')
     tree = html.fromstring(page.content)
     origin = GetFirst(tree.xpath('//div[@class="senseInnerWrapper"]/p'))
     origin = origin.text_content() if origin != '' else ''
@@ -75,7 +82,6 @@ def LexicoWordOrigin(w):
         word_def_blocks = []
         for m in meaning_block:
             meaning = GetFirst(m.xpath('p/span[@class="ind"]/text()'))
-            #print("meaning: {}".format(meaning))
             example = GetFirst(m.xpath('div[@class="exg"]/div[@class="ex"]/em/text()'))
             synonyms = GetFirst(m.xpath('div[@class="synonyms"]/div[@class="exg"]/div'))
             synonyms = synonyms.text_content() if synonyms != '' else ''
@@ -84,20 +90,24 @@ def LexicoWordOrigin(w):
 
     derivative_word = GetFirst(tree.xpath('//section[@class="gramb"]/div[@class="empty_sense"]/p[@class="derivative_of"]/a/text()'))
     derivative_of = MemWord.OnlineConstruct(derivative_word) if derivative_word != '' else None
-    return pos_blocks, origin, derivative_of
 
-    # if len(origin) == 0:
-    #     return ''
-    # return origin[0].text_content()
+    pron_root = GetFirst(tree.xpath('//section[@class="pronSection etym"]/div[@class="pron"]'))
+    phonetic_spelling = GetFirst(pron_root.xpath('span[@class="phoneticspelling"]/text()'))
+    audio_link = GetFirst(pron_root.xpath('a[@class="speaker"]/audio/@src'))
+    mem_word = MemWord(w, pos_blocks, origin, phonetic_spelling, derivative_of)
+    mem_word.audio_link = audio_link
+    return mem_word
 
 class MemWord():
-    def __init__(self, word, mem_level, pos_blocks, origin, dervative_of=None):
+    def __init__(self, word, pos_blocks=[], origin='', phoneticspelling='', dervative_of=None):
         self.word = word
-        self.mem_level = mem_level
+        self.mem_level = 3.
         self.pos_blocks = pos_blocks
         self.definition_cn = ''
         self.origin = str(origin)
         self.dervative_of = dervative_of
+        self.phoneticspelling = phoneticspelling
+        self.audio_link = None
 
     @property
     def vis_word(cls):
@@ -109,7 +119,7 @@ class MemWord():
             result += '"{}" is the derivative of "{}"\n'.format(self.word, self.dervative_of.word)
             return result + self.dervative_of.__str__()
 
-        result = ""
+        result = self.vis_word + ": " + self.phoneticspelling + '\n'
         for b in self.pos_blocks:
             result += b.__str__()
         result += TerminalVis.Seperator()
@@ -124,8 +134,7 @@ class MemWord():
 
     @classmethod
     def OnlineConstruct(cls, word):
-        pos_blocks, origin, derivative_of = LexicoWordOrigin(word)
-        return cls(word, 3.,pos_blocks, origin, derivative_of)
+        return LexicoWordOrigin(word)
 
 class MemVocabulary():
     def __init__(self, mem_words=[]):

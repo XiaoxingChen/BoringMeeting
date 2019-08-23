@@ -16,6 +16,11 @@ from queue import PriorityQueue
 def GetFirst(w):
     return w[0] if len(w) > 0 else ''
 
+def StrictFirst(l, w):
+    if 0 == len(l):
+        raise ValueError("word: {} failed!".format(w))
+    return l[0]
+
 class TerminalVis():
     BOLD = '\033[1m'
     CLS = '\033[H\033[J'
@@ -67,7 +72,7 @@ class POSBlock():
         return output
 
 
-def LexicoWordOrigin(w):
+def LexiconWordPage(w):
     from lxml import html
     import requests
     page = requests.get('https://www.lexico.com/en/definition/' + w)
@@ -89,14 +94,15 @@ def LexicoWordOrigin(w):
         pos_blocks.append(POSBlock(pos, word_def_blocks))
 
     derivative_word = GetFirst(tree.xpath('//section[@class="gramb"]/div[@class="empty_sense"]/p[@class="derivative_of"]/a/text()'))
-    derivative_of = MemWord.OnlineConstruct(derivative_word) if derivative_word != '' else None
+    derivative_of = HyperTextMemWord.OnlineConstruct(derivative_word).mem_word if derivative_word != '' else None
 
-    pron_root = GetFirst(tree.xpath('//section[@class="pronSection etym"]/div[@class="pron"]'))
+    pron_root = StrictFirst(tree.xpath('//section[@class="pronSection etym"]/div[@class="pron"]'), w)
     phonetic_spelling = GetFirst(pron_root.xpath('span[@class="phoneticspelling"]/text()'))
     audio_link = GetFirst(pron_root.xpath('a[@class="speaker"]/audio/@src'))
     mem_word = MemWord(w, pos_blocks, origin, phonetic_spelling, derivative_of)
-    mem_word.audio_link = audio_link
-    return mem_word
+    hyper_text_mem_word = HyperTextMemWord(mem_word)
+    hyper_text_mem_word.audio = requests.get(audio_link).content
+    return hyper_text_mem_word
 
 class MemWord():
     def __init__(self, word, pos_blocks=[], origin='', phoneticspelling='', dervative_of=None):
@@ -107,7 +113,6 @@ class MemWord():
         self.origin = str(origin)
         self.dervative_of = dervative_of
         self.phoneticspelling = phoneticspelling
-        self.audio_link = None
 
     @property
     def vis_word(cls):
@@ -132,11 +137,16 @@ class MemWord():
     def Vague(self):
         self.mem_level += 0.05
 
+class HyperTextMemWord(object):
+    def __init__(self, mem_word, audio=None):
+        self.mem_word = mem_word
+        self.audio = audio
+
     @classmethod
     def OnlineConstruct(cls, word):
-        return LexicoWordOrigin(word)
+        return LexiconWordPage(word)
 
-class MemVocabulary():
+class MemWordQueue():
     def __init__(self, mem_words=[]):
         self.words_que = PriorityQueue()
         for w in mem_words:

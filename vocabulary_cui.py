@@ -1,9 +1,10 @@
 from lxml import html
 import requests
 import multiprocessing as mp
-from mem_word import MemVocabulary
+from mem_word import MemWordQueue
 from vocabulary_path import VocabularyPath
 from mem_word import MemWord
+from mem_word import HyperTextMemWord
 from mem_word import TerminalVis
 import os
 
@@ -12,22 +13,23 @@ import os
 # buyers = tree.xpath('//div[@class="senseInnerWrapper"]/p')
 # print(buyers[0].text_content())
 
-def ProcessFunc(w, q, total_num, counter):
-    mem_w = MemWord.OnlineConstruct(w)
-    # mem_w = "test"
-    q.put(mem_w)
+def ProcessFunc(w, q, total_num, counter, voc_path):
+    hyper_text_mem_w = HyperTextMemWord.OnlineConstruct(w)
+    q.put(hyper_text_mem_w.mem_word)
+    with open(voc_path.word_audio(w) , 'wb') as f:
+        f.write(hyper_text_mem_w.audio)
     counter.value += 1
     print("load {}/{}".format(counter.value, total_num), end='\r')
 
 # def InitVocabularyOnlineConcurrent(words):
-def ConcurrentInitMemWords(words):
+def ConcurrentInitMemWords(words, voc_path):
     import time
     print("Construct Vocabulary !")
     q = mp.Queue()
     counter = mp.Manager().Value('i', 0)
     ps = []
     for w in words:
-        p = mp.Process(target=ProcessFunc, args=(w,q, len(words), counter))
+        p = mp.Process(target=ProcessFunc, args=(w,q, len(words), counter, voc_path))
         ps.append(p)
         p.start()
 
@@ -88,7 +90,7 @@ def PushToLocalGlossary(mem_words, glossary_filename):
     with open (glossary_filename, 'w') as g:
         g.write(yaml.dump(existed_glossary))
 
-def
+# def
 
 class VocabularyIncrementalInitializer(object):
     def __init__(self, path, words):
@@ -97,10 +99,13 @@ class VocabularyIncrementalInitializer(object):
 
 class VocabularyCUI(object):
     def __init__(self, words, root_folder):
+        import pygame
+        pygame.mixer.init()
+        pygame.mixer.music.set_volume(0.5)
         self.voc_path = VocabularyPath(root_folder)
-        self.vocab = MemVocabulary()
+        self.vocab = MemWordQueue()
         mem_words, uninitialized_words = InitMemWordsFromLocal(words, self.voc_path.glossary)
-        online_mem_words = ConcurrentInitMemWords(uninitialized_words)
+        online_mem_words = ConcurrentInitMemWords(uninitialized_words, self.voc_path)
         print("words num: {}, {} from local, {} from online".format(len(words), len(mem_words), len(uninitialized_words)))
         mem_words += online_mem_words
         PushToLocalGlossary(online_mem_words, self.voc_path.glossary)
@@ -110,9 +115,11 @@ class VocabularyCUI(object):
         while True:
             input((self.vocab.HeadWord().vis_word).center(100))
             print(self.vocab.HeadWord())
+            self.Pronounce(self.vocab.HeadWord().word)
             while True:
                 try:
                     level = input(TerminalVis.MemLevel())
+
                     print(TerminalVis.CLS)
                     print('\n' * 10)
                     self.vocab.Update(float(level))
@@ -121,6 +128,10 @@ class VocabularyCUI(object):
                 else:
                     break
 
+    def Pronounce(self, w):
+        import pygame
+        pygame.mixer.music.load(self.voc_path.word_audio(w))
+        pygame.mixer.music.play()
 
 if __name__ == "__main__":
     vocabulary = ['detection'] * 10

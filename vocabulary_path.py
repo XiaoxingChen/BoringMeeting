@@ -3,14 +3,15 @@ import os
 class VocabularyPath():
     def __init__(self, root_folder):
         self.root = root_folder
+        os.makedirs(self.audio_cache_folder, exist_ok=True)
 
     @property
     def glossary(self):
-        return self.root + os.sep + 'glossary.tmp'
+        return self.cache_folder + os.sep + 'glossary.tmp'
 
     @property
     def cache_folder(self):
-        return self.root + os.sep + 'boring_cache'
+        return self.root + os.sep + '.glossary_cache'
 
     @property
     def audio_cache_folder(self):

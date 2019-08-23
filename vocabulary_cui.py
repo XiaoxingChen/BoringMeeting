@@ -16,8 +16,9 @@ import os
 def ProcessFunc(w, q, total_num, counter, voc_path):
     hyper_text_mem_w = HyperTextMemWord.OnlineConstruct(w)
     q.put(hyper_text_mem_w.mem_word)
-    with open(voc_path.word_audio(w) , 'wb') as f:
-        f.write(hyper_text_mem_w.audio)
+    if hyper_text_mem_w.audio is not None:
+        with open(voc_path.word_audio(w) , 'wb') as f:
+            f.write(hyper_text_mem_w.audio)
     counter.value += 1
     print("load {}/{}".format(counter.value, total_num), end='\r')
 
@@ -115,7 +116,7 @@ class VocabularyCUI(object):
         while True:
             input((self.vocab.HeadWord().vis_word).center(100))
             print(self.vocab.HeadWord())
-            self.Pronounce(self.vocab.HeadWord().word)
+            self.Pronounce(self.vocab.HeadWord().word, 2)
             while True:
                 try:
                     level = input(TerminalVis.MemLevel())
@@ -128,10 +129,13 @@ class VocabularyCUI(object):
                 else:
                     break
 
-    def Pronounce(self, w):
+    def Pronounce(self, w, repeat=1):
         import pygame
+        if not os.path.isfile(self.voc_path.word_audio(w)):
+            return
         pygame.mixer.music.load(self.voc_path.word_audio(w))
-        pygame.mixer.music.play()
+        # for i in range(repeat):
+        pygame.mixer.music.play(repeat-1)
 
 if __name__ == "__main__":
     vocabulary = ['detection'] * 10

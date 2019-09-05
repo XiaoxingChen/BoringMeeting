@@ -112,17 +112,21 @@ class VocabularyCUI(object):
         PushToLocalGlossary(online_mem_words, self.voc_path.glossary)
         self.vocab.Push(mem_words)
 
+    def PrintHeadVisWord(self):
+        print(TerminalVis.CLS)
+        print('\n' * 10)
+        print((self.vocab.HeadWord().vis_word).center(100))
+
     def Run(self):
         while True:
-            input((self.vocab.HeadWord().vis_word).center(100))
-            print(self.vocab.HeadWord())
-            self.Pronounce(self.vocab.HeadWord().word, 2)
+            self.PrintHeadVisWord()
+            input()
+            self.Pronounce(self.vocab.HeadWord().word, repeat=2)
             while True:
+                self.PrintHeadVisWord()
+                print(self.vocab.HeadWord())
+                level = input(TerminalVis.MemLevel())
                 try:
-                    level = input(TerminalVis.MemLevel())
-
-                    print(TerminalVis.CLS)
-                    print('\n' * 10)
                     self.vocab.Update(float(level))
                 except ValueError:
                     pass

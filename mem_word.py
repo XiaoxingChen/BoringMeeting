@@ -7,7 +7,7 @@ def GetFirst(w, empty=''):
     return w[0] if len(w) > 0 else empty
 
 class TerminalVis():
-    BOLD = '\033[1m'
+    # BOLD = '\033[1m'
     CLS = '\033[H\033[J'
     @classmethod
     def Seperator(cls):
@@ -20,8 +20,6 @@ class TerminalVis():
     @classmethod
     def MemLevel(cls):
         return Fore.RED + Style.BRIGHT + 'mem_level: ' + Style.RESET_ALL
-
-
 
 class WordDefBlock():
     def __init__(self, definition, example, synonyms):

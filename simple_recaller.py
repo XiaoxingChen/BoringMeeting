@@ -35,8 +35,11 @@ if __name__ == "__main__":
         cui = VocabularyCUI(words, work_folder)
     else:
         raise ValueError("invalid input param")
-
-    cui.Run()
+    try:
+        cui.Run()
+    except KeyboardInterrupt:
+        print('\nExit, storing data ...')
+        quit()
 
 if __name__ == "__main2__":
     from mem_vocabulary import ConcurrentInitVocabulary

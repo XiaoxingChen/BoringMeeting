@@ -103,6 +103,7 @@ class VocabularyCUI(object):
         import pygame
         pygame.mixer.init()
         pygame.mixer.music.set_volume(0.5)
+        print(TerminalVis.CLS)
         self.voc_path = VocabularyPath(root_folder)
         self.vocab = MemWordQueue()
         mem_words, uninitialized_words = InitMemWordsFromLocal(words, self.voc_path.glossary)
@@ -121,7 +122,7 @@ class VocabularyCUI(object):
         while True:
             self.PrintHeadVisWord()
             input()
-            self.Pronounce(self.vocab.HeadWord().word, repeat=2)
+            self.Pronounce(self.vocab.HeadWord().word, repeat=3)
             while True:
                 self.PrintHeadVisWord()
                 print(self.vocab.HeadWord())

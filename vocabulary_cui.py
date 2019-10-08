@@ -7,23 +7,24 @@ from mem_word import MemWord
 from mem_word import HyperTextMemWord
 from mem_word import TerminalVis
 import os
+from sql_glossary import SQLGlossary
+import yaml
 
 # page = requests.get('https://www.lexico.com/en/definition/eleemosynary')
 # tree = html.fromstring(page.content)
 # buyers = tree.xpath('//div[@class="senseInnerWrapper"]/p')
 # print(buyers[0].text_content())
 
-def ProcessFunc(w, q, total_num, counter, voc_path):
+def ProcessFunc(w, q, total_num, counter, glossary_filename):
     try:
         hyper_text_mem_w = HyperTextMemWord.OnlineConstruct(w)
     except:
         print('error of word: {}'.format(w))
-        return 
+        return
     q.put(hyper_text_mem_w.mem_word)
-    if hyper_text_mem_w.audio is not None:
-        with open(voc_path.word_audio(w) , 'wb') as f:
-            f.write(hyper_text_mem_w.audio)
     counter.value += 1
+    db = SQLGlossary(glossary_filename)
+    db.ReplaceWord(w, yaml.dump(hyper_text_mem_w.mem_word), 3., hyper_text_mem_w.audio)
     print("load {}/{}".format(counter.value, total_num), end='\r')
 
 # def InitVocabularyOnlineConcurrent(words):
@@ -86,6 +87,13 @@ def InitMemWordsFromLocal(words, glossary_filename):
     print("uninitialized_words size: {}".format(len(uninitialized_words)))
     return initialized_mem_words, uninitialized_words
 
+def GetInitializedState(words, glossary_filename):
+    db = SQLGlossary(glossary_filename)
+    exists = db.Exists(words)
+    initialized_words = [words[i] for i in range(len(words)) if exists[i]]
+    uninitialized_words = [words[i] for i in range(len(words)) if not exists[i]]
+    print("{}/{} words exist!".format(len(initialized_words), len(words)))
+    return initialized_words, uninitialized_words
 
 def PushToLocalGlossary(mem_words, glossary_filename):
     import yaml
@@ -98,6 +106,10 @@ def PushToLocalGlossary(mem_words, glossary_filename):
     with open (glossary_filename, 'w') as g:
         g.write(yaml.dump(existed_glossary))
 
+def GetDefinitions(words, glossary_filename):
+    db = SQLGlossary(glossary_filename)
+    return db.FetchDefinitions(words)
+
 # def
 
 class VocabularyIncrementalInitializer(object):
@@ -106,19 +118,31 @@ class VocabularyIncrementalInitializer(object):
         self.words = words
 
 class VocabularyCUI(object):
+    # def __init0__(self, words, root_folder):
+    #     import pygame
+    #     pygame.mixer.init()
+    #     pygame.mixer.music.set_volume(0.5)
+    #     print(TerminalVis.CLS)
+    #     self.voc_path = VocabularyPath(root_folder)
+    #     self.vocab = MemWordQueue()
+    #     mem_words, uninitialized_words = InitMemWordsFromLocal(words, self.voc_path.glossary)
+    #     online_mem_words = ConcurrentInitMemWords(uninitialized_words, self.voc_path)
+    #     print("words num: {}, {} from local, {} from online".format(len(words), len(mem_words), len(uninitialized_words)))
+    #     mem_words += online_mem_words
+    #     PushToLocalGlossary(online_mem_words, self.voc_path.glossary)
+    #     self.vocab.Push(mem_words)
+
     def __init__(self, words, root_folder):
         import pygame
         pygame.mixer.init()
         pygame.mixer.music.set_volume(0.5)
         print(TerminalVis.CLS)
-        self.voc_path = VocabularyPath(root_folder)
+        # self.voc_path = VocabularyPath(root_folder)
+        self.db_path = os.path.expanduser("~") + os.sep + ".glossary"
         self.vocab = MemWordQueue()
-        mem_words, uninitialized_words = InitMemWordsFromLocal(words, self.voc_path.glossary)
-        online_mem_words = ConcurrentInitMemWords(uninitialized_words, self.voc_path)
-        print("words num: {}, {} from local, {} from online".format(len(words), len(mem_words), len(uninitialized_words)))
-        mem_words += online_mem_words
-        PushToLocalGlossary(online_mem_words, self.voc_path.glossary)
-        self.vocab.Push(mem_words)
+        initialized_words, uninitialized_words = GetInitializedState(words, self.db_path)
+        ConcurrentInitMemWords(uninitialized_words, self.db_path)
+        self.vocab.Push(GetDefinitions(words, self.db_path))
 
     def PrintHeadVisWord(self):
         print(TerminalVis.CLS)
@@ -141,12 +165,19 @@ class VocabularyCUI(object):
                 else:
                     break
 
+    def Close(self):
+        print('\nExit, storing database ...')
+        db = SQLGlossary(self.db_path)
+        for w in self.vocab.RawData():
+            db.UpdateMemLevel(w.word, w.mem_level)
+
     def Pronounce(self, w, repeat=1):
         import pygame
-        if not os.path.isfile(self.voc_path.word_audio(w)):
-            return
-        pygame.mixer.music.load(self.voc_path.word_audio(w))
-        # for i in range(repeat):
+        import io
+        db = SQLGlossary(self.db_path)
+        audio = db.FetchPronounce(w)
+        inmemoryfile = io.BytesIO(audio)
+        pygame.mixer.music.load(inmemoryfile)
         pygame.mixer.music.play(repeat-1)
 
 if __name__ == "__main__":

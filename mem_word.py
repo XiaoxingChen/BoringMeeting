@@ -80,7 +80,7 @@ def LexiconWordPage(w):
     deriv_of = HyperTextMemWord.OnlineConstruct(derivative_word).mem_word if derivative_word is not None else None
 
     pron_root = GetFirst(tree.xpath('//section[@class="pronSection etym"]/div[@class="pron"]'), empty=None)
-    
+
     mem_word = MemWord(w, pos_blocks, origin, derivative_of=deriv_of)
     hyper_text_mem_word = HyperTextMemWord(mem_word)
     if pron_root is not None:
@@ -155,6 +155,10 @@ class MemWordQueue():
     def Push(self, mem_words):
         for w in mem_words:
             self.words_que.put(w)
+
+    def RawData(self):
+        data = (w for w in self.words_que.queue)
+        return data
 
     def __getitem__(self, i):
         for w in self.words_que.queue:

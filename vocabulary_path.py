@@ -10,6 +10,10 @@ class VocabularyPath():
         return self.cache_folder + os.sep + 'glossary.tmp'
 
     @property
+    def sql_glossary(self):
+        return self.cache_folder + os.sep + '.glossary'
+
+    @property
     def cache_folder(self):
         return self.root + os.sep + '.glossary_cache'
 

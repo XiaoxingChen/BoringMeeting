@@ -9,6 +9,11 @@ def GetFirst(w, empty=''):
 class TerminalVis():
     # BOLD = '\033[1m'
     CLS = '\033[H\033[J'
+    
+    @classmethod
+    def VerticalSpacing(cls, h=10):
+        return '\n'*h
+
     @classmethod
     def Seperator(cls):
         return Fore.YELLOW + "="*50 + Style.RESET_ALL + '\n'
@@ -85,6 +90,7 @@ def LexiconWordPage(w):
     hyper_text_mem_word = HyperTextMemWord(mem_word)
     if pron_root is not None:
         audio_link = GetFirst(pron_root.xpath('a[@class="speaker"]/audio/@src'), empty=None)
+        print(audio_link)
         hyper_text_mem_word.mem_word.phoneticspelling = GetFirst(pron_root.xpath('span[@class="phoneticspelling"]/text()'))
         hyper_text_mem_word.audio = requests.get(audio_link).content if audio_link is not None else None
     return hyper_text_mem_word
@@ -120,7 +126,7 @@ class MemWord():
     def VisMaskedString(self):
         import re
         result = self.__str__()
-        result = re.sub(r"^.*?" + self.word + r".*?:\s/(.*?)/\n", '\n', result)
+        result = re.sub(r"^(.*?" + self.word + r".*?):\s/(.*?)/\n", r'\1: _________\n', result)
         result = re.sub(self.word, '_'*len(self.word), result, flags=re.IGNORECASE)
         result = re.sub(r"\n.*?ORIGIN:[\s\S]*?$", '\n', result)
         return result

@@ -10,49 +10,37 @@ import os
 from sql_glossary import SQLGlossary
 import yaml
 import readline
+from functools import partial
 
 # page = requests.get('https://www.lexico.com/en/definition/eleemosynary')
 # tree = html.fromstring(page.content)
 # buyers = tree.xpath('//div[@class="senseInnerWrapper"]/p')
 # print(buyers[0].text_content())
 
-def ProcessFunc(w, q, total_num, counter, glossary_filename):
+def ProcessFunc(w, q, glossary_filename, total_words):
     try:
         hyper_text_mem_w = HyperTextMemWord.OnlineConstruct(w)
     except:
         print('error of word: {}'.format(w))
         return
     q.put(hyper_text_mem_w.mem_word)
-    counter.value += 1
     db = SQLGlossary(glossary_filename)
     db.ReplaceWord(w, yaml.dump(hyper_text_mem_w.mem_word), 3., hyper_text_mem_w.audio)
-    print("load {}/{}".format(counter.value, total_num), end='\r')
+    print("load {}/{}".format(q.qsize(), total_words), end='\r')
 
 # def InitVocabularyOnlineConcurrent(words):
 def ConcurrentInitMemWords(words, voc_path):
     import time
     print("Construct Vocabulary !")
-    q = mp.Queue()
-    counter = mp.Manager().Value('i', 0)
-    ps = []
-    for w in words:
-        p = mp.Process(target=ProcessFunc, args=(w,q, len(words), counter, voc_path))
-        ps.append(p)
-        p.start()
+    manager = mp.Manager()
+    q = manager.Queue()
+
+    with mp.Pool(30) as pool:
+        pool.map(partial(ProcessFunc, q=q, glossary_filename=voc_path, total_words=len(words)), words)
 
     mem_words = []
-
-    while len(mem_words) < len(words):
-        if q.qsize() > 0:
-            mem_words.append(q.get())
-        else:
-            try:
-                time.sleep(0.1)
-            except KeyboardInterrupt:
-                break
-
-    for p in ps:
-        p.join()
+    while q.qsize() > 0:
+        mem_words.append(q.get())
 
     print("Vocabulary construction done!")
     return mem_words
@@ -124,10 +112,10 @@ class VocabularyCUI(object):
         ConcurrentInitMemWords(uninitialized_words, self.db_path)
         self.vocab.Push(GetDefinitions(words, self.db_path))
 
-    def PrintHeadVisWord(self):
+    def PrintHeadVisWord(self, w):
         print(TerminalVis.CLS)
-        print('\n' * 10)
-        print((self.vocab.HeadWord().vis_word).center(100))
+        print(TerminalVis.VerticalSpacing(10))
+        print((w).center(100))
 
     def Run(self):
         while True:
@@ -148,7 +136,7 @@ class VocabularyCUI(object):
     def RunSpell(self):
         while True:
             while True:
-                print(TerminalVis.CLS)
+                self.PrintHeadVisWord('_' * 10)
                 print(self.vocab.HeadWord().VisMaskedString())
                 word = input('spell check: ')
                 if word == self.vocab.HeadWord().word:
@@ -157,10 +145,13 @@ class VocabularyCUI(object):
                     self.Pronounce(self.vocab.HeadWord().word, repeat=3)
                 elif word == ".w": #word
                     input(self.vocab.HeadWord().word)
+                elif word == ".q": #quit
+                    self.Close()
+                    quit()
 
             while True:
                 self.Pronounce(self.vocab.HeadWord().word, repeat=3)
-                self.PrintHeadVisWord()
+                self.PrintHeadVisWord(self.vocab.HeadWord().vis_word)
                 print(self.vocab.HeadWord())
                 level = input(TerminalVis.MemLevel())
                 try:

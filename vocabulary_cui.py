@@ -176,6 +176,8 @@ class VocabularyCUI(object):
         import io
         db = SQLGlossary(self.db_path)
         audio = db.FetchPronounce(w)
+        if audio is None:
+            return
         inmemoryfile = io.BytesIO(audio)
         pygame.mixer.music.load(inmemoryfile)
         pygame.mixer.music.play(repeat-1)

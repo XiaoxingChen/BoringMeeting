@@ -14,7 +14,11 @@ import os
 # print(buyers[0].text_content())
 
 def ProcessFunc(w, q, total_num, counter, voc_path):
-    hyper_text_mem_w = HyperTextMemWord.OnlineConstruct(w)
+    try:
+        hyper_text_mem_w = HyperTextMemWord.OnlineConstruct(w)
+    except:
+        print('error of word: {}'.format(w))
+        return 
     q.put(hyper_text_mem_w.mem_word)
     if hyper_text_mem_w.audio is not None:
         with open(voc_path.word_audio(w) , 'wb') as f:
@@ -40,7 +44,10 @@ def ConcurrentInitMemWords(words, voc_path):
         if q.qsize() > 0:
             mem_words.append(q.get())
         else:
-            time.sleep(0.1)
+            try:
+                time.sleep(0.1)
+            except KeyboardInterrupt:
+                break
 
     for p in ps:
         p.join()

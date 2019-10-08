@@ -20,21 +20,13 @@ if __name__ == "__main__":
         print("eg.: python {} vocabulary.html".format(sys.argv[0]))
         quit()
 
-    input_path = sys.argv[1]
-    cui = None
-    if os.path.isfile(input_path):
-        html_filename = input_path
-        words = ExtractWordsFromHtmlVocabulary(html_filename)
-        cui = VocabularyCUI(words, os.path.dirname(html_filename))
-    elif os.path.isdir(input_path):
-        work_folder = input_path
-        html_files = glob.glob(work_folder + os.sep + "section_**.html")
-        words = []
-        for html_filename in html_files:
-            words += ExtractWordsFromHtmlVocabulary(html_filename)
-        cui = VocabularyCUI(words, work_folder)
-    else:
-        raise ValueError("invalid input param")
+    html_files = sys.argv[1:]
+    work_folder = os.path.abspath(os.path.dirname(html_files[0]))
+    words = []
+    for html_filename in html_files:
+        words += ExtractWordsFromHtmlVocabulary(html_filename)
+    cui = VocabularyCUI(words, work_folder)
+
     try:
         cui.Run()
     except KeyboardInterrupt:

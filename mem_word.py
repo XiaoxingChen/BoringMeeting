@@ -113,7 +113,16 @@ class MemWord():
         for b in self.pos_blocks:
             result += b.__str__()
         result += TerminalVis.Seperator()
+        result += Fore.GREEN + Style.BRIGHT + 'ORIGIN: ' + Style.RESET_ALL + '\n'
         result += self.origin + '\n'
+        return result
+
+    def VisMaskedString(self):
+        import re
+        result = self.__str__()
+        result = re.sub(r"^.*?" + self.word + r".*?:\s/(.*?)/\n", '\n', result)
+        result = re.sub(self.word, '_'*len(self.word), result, flags=re.IGNORECASE)
+        result = re.sub(r"\n.*?ORIGIN:[\s\S]*?$", '\n', result)
         return result
 
     def __lt__(self, other):

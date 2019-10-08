@@ -28,7 +28,7 @@ if __name__ == "__main__":
     cui = VocabularyCUI(words, work_folder)
 
     try:
-        cui.Run()
+        cui.RunSpell()
     except KeyboardInterrupt:
         cui.Close()
         quit()

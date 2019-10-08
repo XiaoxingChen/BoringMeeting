@@ -9,6 +9,7 @@ from mem_word import TerminalVis
 import os
 from sql_glossary import SQLGlossary
 import yaml
+import readline
 
 # page = requests.get('https://www.lexico.com/en/definition/eleemosynary')
 # tree = html.fromstring(page.content)
@@ -110,34 +111,13 @@ def GetDefinitions(words, glossary_filename):
     db = SQLGlossary(glossary_filename)
     return db.FetchDefinitions(words)
 
-# def
-
-class VocabularyIncrementalInitializer(object):
-    def __init__(self, path, words):
-        self.path = path
-        self.words = words
-
 class VocabularyCUI(object):
-    # def __init0__(self, words, root_folder):
-    #     import pygame
-    #     pygame.mixer.init()
-    #     pygame.mixer.music.set_volume(0.5)
-    #     print(TerminalVis.CLS)
-    #     self.voc_path = VocabularyPath(root_folder)
-    #     self.vocab = MemWordQueue()
-    #     mem_words, uninitialized_words = InitMemWordsFromLocal(words, self.voc_path.glossary)
-    #     online_mem_words = ConcurrentInitMemWords(uninitialized_words, self.voc_path)
-    #     print("words num: {}, {} from local, {} from online".format(len(words), len(mem_words), len(uninitialized_words)))
-    #     mem_words += online_mem_words
-    #     PushToLocalGlossary(online_mem_words, self.voc_path.glossary)
-    #     self.vocab.Push(mem_words)
 
     def __init__(self, words, root_folder):
         import pygame
         pygame.mixer.init()
         pygame.mixer.music.set_volume(0.5)
         print(TerminalVis.CLS)
-        # self.voc_path = VocabularyPath(root_folder)
         self.db_path = os.path.expanduser("~") + os.sep + ".glossary"
         self.vocab = MemWordQueue()
         initialized_words, uninitialized_words = GetInitializedState(words, self.db_path)
@@ -155,6 +135,31 @@ class VocabularyCUI(object):
             input()
             self.Pronounce(self.vocab.HeadWord().word, repeat=3)
             while True:
+                self.PrintHeadVisWord()
+                print(self.vocab.HeadWord())
+                level = input(TerminalVis.MemLevel())
+                try:
+                    self.vocab.Update(float(level))
+                except ValueError:
+                    pass
+                else:
+                    break
+
+    def RunSpell(self):
+        while True:
+            while True:
+                print(TerminalVis.CLS)
+                print(self.vocab.HeadWord().VisMaskedString())
+                word = input('spell check: ')
+                if word == self.vocab.HeadWord().word:
+                    break
+                elif word == ".s": #speak
+                    self.Pronounce(self.vocab.HeadWord().word, repeat=3)
+                elif word == ".w": #word
+                    input(self.vocab.HeadWord().word)
+
+            while True:
+                self.Pronounce(self.vocab.HeadWord().word, repeat=3)
                 self.PrintHeadVisWord()
                 print(self.vocab.HeadWord())
                 level = input(TerminalVis.MemLevel())

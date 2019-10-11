@@ -18,10 +18,15 @@ from functools import partial
 # print(buyers[0].text_content())
 
 def ProcessFunc(w, q, glossary_filename, total_words):
-    try:
-        hyper_text_mem_w = HyperTextMemWord.OnlineConstruct(w)
-    except:
-        print('error of word: {}'.format(w))
+    hyper_text_mem_w = None
+    for i in range(3):
+        try:
+            hyper_text_mem_w = HyperTextMemWord.OnlineConstruct(w)
+        except:
+            print('Retry of word: {}, {}th'.format(w, i+1))
+            continue
+    if hyper_text_mem_w is None:
+        print('word: "{}" failed'.format(w))
         return
     q.put(hyper_text_mem_w.mem_word)
     db = SQLGlossary(glossary_filename)
@@ -104,7 +109,7 @@ class VocabularyCUI(object):
     def __init__(self, words, root_folder):
         import pygame
         pygame.mixer.init()
-        pygame.mixer.music.set_volume(0.5)
+        pygame.mixer.music.set_volume(1.)
         print(TerminalVis.CLS)
         self.db_path = os.path.expanduser("~") + os.sep + ".glossary"
         self.vocab = MemWordQueue()

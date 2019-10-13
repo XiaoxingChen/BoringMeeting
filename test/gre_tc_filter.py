@@ -21,7 +21,8 @@ class Options(object):
             option_texts = option_texts[2:]
             self.blank_num = 2
         for text in option_texts:
-            key, val = text.split('. ')
+            # print(option_texts)
+            key, val = text.split('.')
             self.option_dict[key] = val
 
     def __str__(self):
@@ -69,9 +70,25 @@ class TextCompletionQuestion(object):
         self.options = Options(raw_text[divide_idx:])
         self.section_idx = section_idx
         self.answer = 'ABC'[:self.options.blank_num]
+        self.correct_count = 0.
+        self.train_count = 0.
+
+    @property
+    def incorrect_rate(cls):
+        if cls.train_count == 0.:
+            return 1.
+        return float(cls.train_count - cls.correct_count) / cls.train_count
+
+    def __lt__(self, other):
+        return self.incorrect_rate > other.incorrect_rate
+
+    def updateTrainData(self, is_correct):
+        self.correct_count += float(is_correct)
+        self.train_count += 1
 
     def __str__(self):
-        result = self.question_text + '\n'*2
+        result = self.section_idx + '\n'
+        result += self.question_text + '\n'*2
         result += self.options.__str__()
         return result
 

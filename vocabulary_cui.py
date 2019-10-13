@@ -25,6 +25,8 @@ def ProcessFunc(w, q, glossary_filename, total_words):
         except:
             print('Retry of word: {}, {}th'.format(w, i+1))
             continue
+        else:
+            break
     if hyper_text_mem_w is None:
         print('word: "{}" failed'.format(w))
         return

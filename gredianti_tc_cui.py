@@ -1,10 +1,14 @@
 import readline
+import logging
+import sys
+from colorama import Fore, Back, Style
 from queue import PriorityQueue
 import yaml
 from test.gre_tc_filter import *
 from lxml import html
 import re
 from mem_word import TerminalVis
+import time
 
 class TextCompletionLib(object):
     def __init__(self, raw_html, answer_yaml):
@@ -20,10 +24,8 @@ class TextCompletionLib(object):
         
         # print(section_dict['Section 51'])
         for key, content in section_dict.items():
-            qs = [TextCompletionQuestion(key, raw_text) for raw_text in divideToQuestions(section_dict[key])]
-            for i in range(len(qs)):
-                # print("sec: {}, q: {}".format(key, qs[i]))
-                qs[i].answer = answer_dict[key][i]
+            question_texts = divideToQuestions(section_dict[key])
+            qs = [TextCompletionQuestion(key, i+1, question_texts[i], answer_dict[key][i]) for i in range(len(question_texts))]
             self.section_question_dict[key] = qs
         
 
@@ -60,6 +62,10 @@ class MemoryQueue():
                 return w
         raise KeyError("No item: {} in lib".format(i))
 
+class TCVis():
+    CORRECT = Back.GREEN + Style.BRIGHT + 'CORRECT' + Style.RESET_ALL
+    WRONG = Back.RED + Style.BRIGHT + 'WRONG' + Style.RESET_ALL
+
 class GrediantiTextCompletionCUI():
     def __init__(self, section_ids, raw_html_folder):
         self.db_path = os.path.expanduser("~") + os.sep + ".glossary"
@@ -70,13 +76,15 @@ class GrediantiTextCompletionCUI():
         # tc_lib_list = []
         for id in section_ids:
             self.mem_que.Push(tc_lib_full.section_question_dict['Section {}'.format(id)])
+        logging.info('loggin')
     
     def Close(self):
-        pass
+        logging.info('loggout')
     
     def RunTrain(self):
         while True:
             while True:
+                start_time = time.time()
                 print(TerminalVis.CLS)
                 print(self.mem_que.HeadItem().__str__())
                 answer = input('Select {} answer(s): '.format(len(self.mem_que.HeadItem().answer)))
@@ -90,13 +98,20 @@ class GrediantiTextCompletionCUI():
                 elif answer == ".q": #quit
                     self.Close()
                     quit()
+                elif answer == "": #quit
+                    continue
                 else:
                     break
 
             while True:
                 print(TerminalVis.CLS)
                 print(self.mem_que.HeadItem().answerFilledStr())
-                input('Answer: {}, your answer: {}, {}!'.format(self.mem_que.HeadItem().answer, answer, 'RIGHT' if correct else 'WRONG'))
+                input('Answer: {}, your answer: {}, {}!'.format(self.mem_que.HeadItem().answer, answer, TCVis.CORRECT if correct else TCVis.WRONG))
+                time_cost = time.time() - start_time
+                logging.info("[%sQ%s] time_cost=%.3f input=%s result=%s", \
+                    self.mem_que.HeadItem().section_idx, 
+                    self.mem_que.HeadItem().question_idx, 
+                    time_cost, answer, correct)
                 try:
                     self.mem_que.Update(correct)
                 except ValueError:
@@ -104,9 +119,43 @@ class GrediantiTextCompletionCUI():
                 else:
                     break
 
+
+class CacheManager():
+    def __init__(self, cache_filename):
+        self.cache_filename = cache_filename
+    
+    def fetchVal(self, key, example):
+        tmp_dict = {}
+        val = None
+        if os.path.isfile(self.cache_filename):
+            with open(self.cache_filename, 'r') as f:
+                loaded = yaml.load(f.read())
+                if loaded:
+                    tmp_dict = loaded
+                try:
+                    val = tmp_dict[key]
+                except:
+                    pass
+        if not val:
+            print("please input {}, eg: {}".format(key, self.promp_dict[key]))
+            val = input("{}: ".format(key))
+            tmp_dict[key] = val
+            with open(self.cache_filename, 'w') as f:
+                f.write(yaml.dump(tmp_dict))
+        return val
+
 if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("python3 {} section_idx".format(sys.argv[0]))
+        quit()
+
+    cache = CacheManager(os.path.expanduser('~') + os.sep + '.boring_meeting')
+    lang_root = cache.fetchVal("LANG_ROOT", '/home/xiache02/engineering/lang_examination_archiv_en')
+    raw_html_folder =  lang_root + '/gre_exercise/gredianti/text_completion'
+    gredianti_tc_log = lang_root + '/gre_exercise/gredianti/text_completion/review.log'
+
+    section_idx = [int(idx) for idx in sys.argv[1:]]
     
-    
-    raw_html_folder = '/home/chenxx/engineering/lang_examination_archiv_en/gre_exercise/gredianti/text_completion'
-    cui = GrediantiTextCompletionCUI([10], raw_html_folder)
+    logging.basicConfig(filename=gredianti_tc_log, format='[%(asctime)s]%(message)s', level=logging.INFO)
+    cui = GrediantiTextCompletionCUI(section_idx, raw_html_folder)
     cui.RunTrain()

@@ -60,7 +60,7 @@ C. {}\t\tF. {}\t\tI. {}
         return result
 
 class TextCompletionQuestion(object):
-    def __init__(self, section_idx, raw_text):
+    def __init__(self, section_idx, question_idx, raw_text, answer ):
         divide_idx = None
         for i in range(len(raw_text)):
             if re.fullmatch('A\.\s.*', raw_text[i]) or re.fullmatch('Blank \(i\)', raw_text[i]):
@@ -69,7 +69,8 @@ class TextCompletionQuestion(object):
         self.question_text = ' '.join([t for t in raw_text[:divide_idx]])
         self.options = Options(raw_text[divide_idx:])
         self.section_idx = section_idx
-        self.answer = 'ABC'[:self.options.blank_num]
+        self.answer = answer
+        self.question_idx = question_idx
         self.correct_count = 0.
         self.train_count = 0.
 

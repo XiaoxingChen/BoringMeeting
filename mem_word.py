@@ -96,6 +96,7 @@ def LexiconWordPage(w):
     return hyper_text_mem_word
 
 class MemWord():
+    vague_step = 0.05
     def __init__(self, word, pos_blocks=[], origin='', phoneticspelling='', derivative_of=None):
         self.word = word
         self.mem_level = 3.
@@ -135,7 +136,7 @@ class MemWord():
         return self.mem_level > other.mem_level
 
     def Vague(self):
-        self.mem_level += 0.05
+        self.mem_level += MemWord.vague_step
 
 class HyperTextMemWord(object):
     def __init__(self, mem_word, audio=None):
@@ -163,7 +164,7 @@ class MemWordQueue():
             return
         for w in self.words_que.queue:
             w.Vague()
-        self.head_word.mem_level = mem_level_top
+        self.head_word.mem_level += (mem_level_top - 3.)
         self.words_que.put(self.head_word)
         self.head_word = None
 

@@ -1,4 +1,5 @@
 from lxml import html
+import logging
 import requests
 import multiprocessing as mp
 from mem_word import MemWordQueue
@@ -115,9 +116,13 @@ class VocabularyCUI(object):
         print(TerminalVis.CLS)
         self.db_path = os.path.expanduser("~") + os.sep + ".glossary"
         self.vocab = MemWordQueue()
+        self.repo_root = root_folder 
+        self.log_file = root_folder + '/simple_recaller.log'
+        logging.basicConfig(filename=self.log_file, format='[%(asctime)s]%(message)s', level=logging.INFO)
         initialized_words, uninitialized_words = GetInitializedState(words, self.db_path)
         ConcurrentInitMemWords(uninitialized_words, self.db_path)
         self.vocab.Push(GetDefinitions(words, self.db_path))
+        logging.info('loggin')
 
     def PrintHeadVisWord(self, w):
         print(TerminalVis.CLS)
@@ -135,6 +140,7 @@ class VocabularyCUI(object):
                 level = input(TerminalVis.MemLevel())
                 try:
                     self.vocab.Update(float(level))
+                    logging.info("word=%s mem_level=%s", self.vocab.HeadWord().word, level)
                 except ValueError:
                     pass
                 else:
@@ -161,6 +167,7 @@ class VocabularyCUI(object):
                 self.PrintHeadVisWord(self.vocab.HeadWord().vis_word)
                 print(self.vocab.HeadWord())
                 level = input(TerminalVis.MemLevel())
+                logging.info("word=%s mem_level=%s", self.vocab.HeadWord().word, level)
                 try:
                     self.vocab.Update(float(level))
                 except ValueError:
@@ -170,9 +177,14 @@ class VocabularyCUI(object):
 
     def Close(self):
         print('\nExit, storing database ...')
+        logging.info('loggout')
         db = SQLGlossary(self.db_path)
         for w in self.vocab.RawData():
             db.UpdateMemLevel(w.word, w.mem_level)
+        
+        os.chdir(self.repo_root)
+        os.system('git stage {}'.format(self.log_file))
+        os.system('git commit -m "Modify: auto commit by tc_trainer"')
 
     def Pronounce(self, w, repeat=1):
         import pygame

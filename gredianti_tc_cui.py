@@ -67,19 +67,27 @@ class TCVis():
     WRONG = Back.RED + Style.BRIGHT + 'WRONG' + Style.RESET_ALL
 
 class GrediantiTextCompletionCUI():
-    def __init__(self, section_ids, raw_html_folder):
+    def __init__(self, section_ids, repo_root):
         self.db_path = os.path.expanduser("~") + os.sep + ".glossary"
         self.mem_que = MemoryQueue()
+        self.repo_root = repo_root
+        raw_html_folder = self.repo_root + '/gre_exercise/gredianti/text_completion'
         raw_html = raw_html_folder + '/gredianti_tc.html'
         answer_yaml = raw_html_folder + '/answer.yaml'
+        self.log_file = raw_html_folder + '/review.log'
         tc_lib_full = TextCompletionLib(raw_html, answer_yaml)
-        # tc_lib_list = []
+        
         for id in section_ids:
             self.mem_que.Push(tc_lib_full.section_question_dict['Section {}'.format(id)])
+
+        logging.basicConfig(filename=self.log_file, format='[%(asctime)s]%(message)s', level=logging.INFO)
         logging.info('loggin')
     
     def Close(self):
         logging.info('loggout')
+        os.chdir(self.repo_root)
+        os.system('git stage {}'.format(self.log_file))
+        os.system('git commit -m "Modify: auto commit by tc_trainer"')
     
     def RunTrain(self):
         while True:
@@ -103,15 +111,18 @@ class GrediantiTextCompletionCUI():
                 else:
                     break
 
+            time_cost = time.time() - start_time
             while True:
                 print(TerminalVis.CLS)
                 print(self.mem_que.HeadItem().answerFilledStr())
-                input('Answer: {}, your answer: {}, {}!'.format(self.mem_que.HeadItem().answer, answer, TCVis.CORRECT if correct else TCVis.WRONG))
-                time_cost = time.time() - start_time
-                logging.info("[%sQ%s] time_cost=%.3f input=%s result=%s", \
+                print('Answer: {}, your answer: {}, {}!'.format(self.mem_que.HeadItem().answer, answer, TCVis.CORRECT if correct else TCVis.WRONG))
+                comment = input("Comment: ")
+                if comment == '':
+                    continue
+                logging.info("[%sQ%s] time_cost=%.3f input=%s result=%s [comment:%s]", \
                     self.mem_que.HeadItem().section_idx, 
                     self.mem_que.HeadItem().question_idx, 
-                    time_cost, answer, correct)
+                    time_cost, answer, correct, comment)
                 try:
                     self.mem_que.Update(correct)
                 except ValueError:
@@ -137,7 +148,7 @@ class CacheManager():
                 except:
                     pass
         if not val:
-            print("please input {}, eg: {}".format(key, self.promp_dict[key]))
+            print("please input {}, eg: {}".format(key, example))
             val = input("{}: ".format(key))
             tmp_dict[key] = val
             with open(self.cache_filename, 'w') as f:
@@ -152,10 +163,7 @@ if __name__ == "__main__":
     cache = CacheManager(os.path.expanduser('~') + os.sep + '.boring_meeting')
     lang_root = cache.fetchVal("LANG_ROOT", '/home/xiache02/engineering/lang_examination_archiv_en')
     raw_html_folder =  lang_root + '/gre_exercise/gredianti/text_completion'
-    gredianti_tc_log = lang_root + '/gre_exercise/gredianti/text_completion/review.log'
 
     section_idx = [int(idx) for idx in sys.argv[1:]]
-    
-    logging.basicConfig(filename=gredianti_tc_log, format='[%(asctime)s]%(message)s', level=logging.INFO)
-    cui = GrediantiTextCompletionCUI(section_idx, raw_html_folder)
+    cui = GrediantiTextCompletionCUI(section_idx, lang_root)
     cui.RunTrain()

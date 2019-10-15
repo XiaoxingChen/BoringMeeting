@@ -27,7 +27,20 @@ class TextCompletionLib(object):
             question_texts = divideToQuestions(section_dict[key])
             qs = [TextCompletionQuestion(key, i+1, question_texts[i], answer_dict[key][i]) for i in range(len(question_texts))]
             self.section_question_dict[key] = qs
-        
+
+class RingQueue():        
+    def __init__(self, mem_items=[]):
+        self.items = mem_items
+
+    def HeadItem(self):
+        return self.items[0]
+
+    def Update(self):
+        self.items.append(self.items[0])
+        self.items.pop(0)
+    
+    def Push(self, items):
+        self.items += items
 
 class MemoryQueue():
     def __init__(self, mem_items=[]):
@@ -41,7 +54,7 @@ class MemoryQueue():
             self.head_item = self.items_que.get()
         return self.head_item
 
-    def Update(self, is_correct):
+    def Update(self, is_correct, *args):
         if self.head_item is None:
             return
         self.head_item.updateTrainData(is_correct)
@@ -69,7 +82,7 @@ class TCVis():
 class GrediantiTextCompletionCUI():
     def __init__(self, section_ids, repo_root):
         self.db_path = os.path.expanduser("~") + os.sep + ".glossary"
-        self.mem_que = MemoryQueue()
+        self.mem_que = MemoryQueue() 
         self.repo_root = repo_root
         raw_html_folder = self.repo_root + '/gre_exercise/gredianti/text_completion'
         raw_html = raw_html_folder + '/gredianti_tc.html'

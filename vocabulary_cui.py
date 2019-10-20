@@ -109,7 +109,7 @@ def GetDefinitions(words, glossary_filename):
 
 class VocabularyCUI(object):
 
-    def __init__(self, words, root_folder):
+    def __init__(self, words, root_folder, vocabularies):
         import pygame
         pygame.mixer.init()
         pygame.mixer.music.set_volume(1.)
@@ -123,6 +123,9 @@ class VocabularyCUI(object):
         ConcurrentInitMemWords(uninitialized_words, self.db_path)
         self.vocab.Push(GetDefinitions(words, self.db_path))
         logging.info('loggin')
+        for voc in vocabularies:
+            logging.info('[vocabulary: {}]'.format(voc))
+        logging.info('[totally {} words]'.format(len(words)))
 
     def PrintHeadVisWord(self, w):
         print(TerminalVis.CLS)
@@ -166,6 +169,7 @@ class VocabularyCUI(object):
                 self.Pronounce(self.vocab.HeadWord().word, repeat=3)
                 self.PrintHeadVisWord(self.vocab.HeadWord().vis_word)
                 print(self.vocab.HeadWord())
+                print("Max cost: {:.3f}".format(self.vocab.HeadWord().mem_level))
                 level = input(TerminalVis.MemLevel())
                 logging.info("word=%s mem_level=%s", self.vocab.HeadWord().word, level)
                 try:

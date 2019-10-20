@@ -31,8 +31,8 @@ if __name__ == "__main__":
     
     words = []
     for html_filename in html_files:
-        words += ExtractWordsFromHtmlVocabulary(html_filename)
-    cui = VocabularyCUI(words, lang_root)
+        words += ExtractWordsFromHtmlVocabulary(lang_root + os.sep + html_filename)
+    cui = VocabularyCUI(words, lang_root, html_files)
 
     try:
         cui.RunSpell()

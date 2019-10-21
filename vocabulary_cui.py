@@ -198,8 +198,11 @@ class VocabularyCUI(object):
         if audio is None:
             return
         inmemoryfile = io.BytesIO(audio)
-        pygame.mixer.music.load(inmemoryfile)
-        pygame.mixer.music.play(repeat-1)
+        try:
+            pygame.mixer.music.load(inmemoryfile)
+            pygame.mixer.music.play(repeat-1)
+        except pygame.error: 
+            pass
 
 if __name__ == "__main__":
     vocabulary = ['detection'] * 10

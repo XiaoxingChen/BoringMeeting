@@ -26,13 +26,27 @@ def NoPhrase(items):
         words.append(i)
     return words
 
-def ExtractWordsFromHtmlVocabulary(html_filename):
+def NoDash(items):
+    words = []
+    for i in items:
+        if '-' in i:
+            continue
+        if len(i) == 0:
+            continue
+        words.append(i)
+    return words
+
+def ExtractWordsFromHtmlVocabulary(html_filename, not_found_exception=True):
     html_file = open(html_filename, 'r')
     html_str = html_file.read()
     try:
         vocabulary_table = ExtractVocabularyTable(html_str)
     except ValueError:
-        raise ValueError("no vocabulary segment found in {}".format(html_filename))
+        if not_found_exception:
+            raise ValueError("no vocabulary segment found in {}".format(html_filename))
+        else:
+            return []
+        
     items = ExtractHtmlTableFirstColumn(vocabulary_table)
     return NoPhrase(items)
 
@@ -41,21 +55,24 @@ if __name__ == "__main__":
         print("eg.: python {} vocabulary.html".format(sys.argv[0]))
         quit()
 
-    input_path = sys.argv[1]
+    html_files = sys.argv[1:]
+    words = []
+    for html_filename in html_files:
+        words += ExtractWordsFromHtmlVocabulary(html_filename, not_found_exception=False)
     
-    if os.path.isfile(input_path):
-        html_filename = input_path
-        words = ExtractWordsFromHtmlVocabulary(html_filename)
-        # cui = VocabularyCUI(words, os.path.dirname(html_filename))
-    elif os.path.isdir(input_path):
-        work_folder = input_path
-        html_files = glob.glob(work_folder + os.sep + "section_**.html")
-        words = []
-        for html_filename in html_files:
-            words += ExtractWordsFromHtmlVocabulary(html_filename)
-        # cui = VocabularyCUI(words, work_folder)
-    else:
-        raise ValueError("invalid input param")
+    # if os.path.isfile(input_path):
+    #     html_filename = input_path
+    #     words = ExtractWordsFromHtmlVocabulary(html_filename)
+    #     # cui = VocabularyCUI(words, os.path.dirname(html_filename))
+    # elif os.path.isdir(input_path):
+    #     work_folder = input_path
+    #     html_files = glob.glob(work_folder + os.sep + "section_**.html")
+    #     words = []
+    #     for html_filename in html_files:
+    #         words += ExtractWordsFromHtmlVocabulary(html_filename)
+    #     # cui = VocabularyCUI(words, work_folder)
+    # else:
+    #     raise ValueError("invalid input param")
 
     # words = ExtractWordsFromHtmlVocabulary(html_filename)
 
